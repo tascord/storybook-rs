@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Storybook RS - Rust Component Viewer</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            height: 100vh;
+            display: flex;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: #f6f9fc;
+            border-right: 1px solid #e3e8ee;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .sidebar h1 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #1e293b;
+        }
+
+        .story-list {
+            list-style: none;
+        }
+
+        .story-item {
+            padding: 10px;
+            margin-bottom: 5px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .story-item:hover {
+            background: #e3e8ee;
+        }
+
+        .story-item.active {
+            background: #1e40af;
+            color: white;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .toolbar {
+            background: white;
+            border-bottom: 1px solid #e3e8ee;
+            padding: 15px 30px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .toolbar h2 {
+            font-size: 18px;
+            color: #1e293b;
+        }
+
+        .controls-panel {
+            background: #f6f9fc;
+            border-bottom: 1px solid #e3e8ee;
+            padding: 20px 30px;
+            display: none;
+        }
+
+        .controls-panel.visible {
+            display: block;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #475569;
+        }
+
+        .control-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .render-button {
+            background: #1e40af;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .render-button:hover {
+            background: #1e3a8a;
+        }
+
+        .canvas {
+            flex: 1;
+            padding: 40px;
+            background: white;
+            overflow: auto;
+        }
+
+        #storybook-root {
+            min-height: 100px;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            color: #64748b;
+        }
+
+        .error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h1>📚 Storybook RS</h1>
+        <ul class="story-list" id="story-list">
+            <li class="loading">Loading stories...</li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <div class="toolbar">
+            <h2 id="current-story">Select a story</h2>
+        </div>
+
+        <div class="controls-panel" id="controls-panel">
+            <div id="controls-container"></div>
+            <button class="render-button" id="render-button">Render</button>
+        </div>
+
+        <div class="canvas">
+            <div id="storybook-root"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import init, { register_all_stories, get_stories, render_story } from '../example/pkg/example.js';
+
+        let currentStory = null;
+        let currentArgs = {};
+
+        async function initApp() {
+            try {
+                // Initialize WASM module
+                await init();
+                
+                // Register all stories
+                register_all_stories();
+
+                // Get all registered stories
+                const stories = get_stories();
+                console.log('Loaded stories:', stories);
+
+                // Populate story list
+                const storyList = document.getElementById('story-list');
+                storyList.innerHTML = '';
+
+                stories.forEach((story, index) => {
+                    // Extract properties from the Map-like object
+                    const storyName = story.get ? story.get('name') : story.name;
+                    const storyArgs = story.get ? story.get('args') : story.args;
+                    
+                    const li = document.createElement('li');
+                    li.className = 'story-item';
+                    li.textContent = storyName;
+                    li.addEventListener('click', () => selectStory({name: storyName, args: storyArgs}));
+                    storyList.appendChild(li);
+
+                    // Auto-select first story
+                    if (index === 0) {
+                        selectStory({name: storyName, args: storyArgs});
+                    }
+                });
+
+            } catch (error) {
+                console.error('Failed to initialize:', error);
+                document.getElementById('storybook-root').innerHTML = 
+                    `<div class="error">Failed to initialize: ${error.message}</div>`;
+            }
+        }
+
+        function selectStory(story) {
+            currentStory = story;
+            currentArgs = {};
+
+            // Update UI
+            document.getElementById('current-story').textContent = story.name;
+            
+            // Update active story in list
+            document.querySelectorAll('.story-item').forEach(item => {
+                item.classList.toggle('active', item.textContent === story.name);
+            });
+
+            // Build controls
+            const controlsContainer = document.getElementById('controls-container');
+            const controlsPanel = document.getElementById('controls-panel');
+            
+            controlsContainer.innerHTML = '';
+
+            if (story.args && story.args.length > 0) {
+                controlsPanel.classList.add('visible');
+                
+                story.args.forEach(arg => {
+                    // Extract properties from Map if needed
+                    const argName = arg.get ? arg.get('name') : arg.name;
+                    const argTy = arg.get ? arg.get('ty') : arg.ty;
+                    
+                    const controlGroup = document.createElement('div');
+                    controlGroup.className = 'control-group';
+
+                    const label = document.createElement('label');
+                    label.textContent = `${argName} (${argTy})`;
+
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.id = `arg-${argName}`;
+                    const defaultValue = getDefaultValue(argName, argTy);
+                    input.placeholder = defaultValue;
+                    input.value = defaultValue;
+                    input.addEventListener('input', (e) => {
+                        currentArgs[argName] = e.target.value;
+                    });
+
+                    // Initialize with default value
+                    currentArgs[argName] = defaultValue;
+
+                    controlGroup.appendChild(label);
+                    controlGroup.appendChild(input);
+                    controlsContainer.appendChild(controlGroup);
+                });
+            } else {
+                controlsPanel.classList.remove('visible');
+            }
+
+            // Render with default values
+            renderCurrentStory();
+        }
+
+        function getDefaultValue(name, type) {
+            // Provide defaults based on field name and type
+            if (name === 'label') return 'Click me';
+            if (name === 'color') return '#007bff';
+            if (name === 'title') return 'Card Title';
+            if (name === 'content') return 'This is card content';
+            if (name === 'background') return '#ffffff';
+            if (name === 'placeholder') return 'Enter text...';
+            if (name === 'value') return '';
+            
+            // Fallback based on type
+            if (type.includes('String')) {
+                return 'Default text';
+            }
+            return '';
+        }
+
+        function renderCurrentStory() {
+            if (!currentStory) return;
+
+            try {
+                console.log('Rendering story:', currentStory.name, 'with args:', currentArgs);
+                render_story(currentStory.name, currentArgs);
+                console.log('Story rendered successfully');
+            } catch (error) {
+                console.error('Failed to render story:', error);
+                document.getElementById('storybook-root').innerHTML =
+                    `<div class="error">Failed to render: ${error.message}</div>`;
+            }
+        }
+
+        // Set up render button
+        document.getElementById('render-button').addEventListener('click', renderCurrentStory);
+
+        // Initialize the app
+        initApp();
+    </script>
+</body>
+</html>

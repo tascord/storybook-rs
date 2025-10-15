@@ -1,1 +1,6 @@
 /target
+/example/pkg
+node_modules
+*.wasm
+*.wasm.d.ts
+package-lock.json

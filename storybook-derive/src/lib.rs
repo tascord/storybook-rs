@@ -39,14 +39,7 @@ pub fn derive_story(input: TokenStream) -> TokenStream {
 
     let name_str = name.to_string();
 
-    // Generate a unique identifier for the distributed slice entry
-    let slice_ident = syn::Ident::new(
-        &format!("__STORYBOOK_REGISTER_{}", name.to_string().to_uppercase()),
-        name.span(),
-    );
-
-    // Linker will handle this properly at link time
-    // We use a helper const fn to create the metadata
+    // Generate helper methods
     let expanded = quote! {
         impl #impl_generics #name #ty_generics #where_clause {
             pub const fn story_name() -> &'static str {
@@ -58,26 +51,7 @@ pub fn derive_story(input: TokenStream) -> TokenStream {
                     #(#arg_types),*
                 ]
             }
-
-            const fn _make_type_id() -> std::any::TypeId {
-                // This is a workaround since TypeId::of is not const yet
-                // We use a transmute hack that works for statics
-                unsafe { std::mem::transmute([0u64; 2]) }
-            }
         }
-
-        // Auto-register with linkme distributed slice
-        #[linkme::distributed_slice(storybook_core::STORIES)]
-        static #slice_ident: storybook_core::StoryMeta = {
-            // Use a const block to initialize
-            const META: storybook_core::StoryMeta = storybook_core::StoryMeta {
-                name: #name_str,
-                args: #name::story_args,
-                type_id: unsafe { std::mem::transmute([0u64; 2]) }, // Placeholder, not used for lookup
-                render_fn: #name::render,
-            };
-            META
-        };
     };
 
     TokenStream::from(expanded)

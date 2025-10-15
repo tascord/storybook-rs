@@ -1,4 +1,4 @@
-use storybook_core::Story;
+use storybook_core::{Story, register_story, StoryMeta};
 use storybook_derive::Story as DeriveStory;
 use dominator::{Dom, html};
 use wasm_bindgen::prelude::*;
@@ -119,4 +119,26 @@ impl Story for Input {
             .style("width", "200px")
         })
     }
+}
+
+// Register all stories
+#[wasm_bindgen]
+pub fn register_all_stories() {
+    register_story(StoryMeta {
+        name: Button::name(),
+        args: Button::args,
+        render_fn: Button::render,
+    });
+    
+    register_story(StoryMeta {
+        name: Card::name(),
+        args: Card::args,
+        render_fn: Card::render,
+    });
+    
+    register_story(StoryMeta {
+        name: Input::name(),
+        args: Input::args,
+        render_fn: Input::render,
+    });
 }

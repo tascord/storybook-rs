@@ -1,10 +1,10 @@
 use wasm_bindgen::prelude::*;
 use dominator::{Dom, html};
 use serde::{Deserialize, Serialize};
-use std::any::TypeId;
+use std::sync::Mutex;
+use once_cell::sync::Lazy;
 
 // Re-export for use in derive macro
-pub use linkme;
 pub use storybook_derive::Story;
 
 /// Argument type information
@@ -30,20 +30,38 @@ pub trait Story: 'static + Sync {
 pub struct StoryMeta {
     pub name: &'static str,
     pub args: fn() -> Vec<ArgType>,
-    pub type_id: TypeId,
     pub render_fn: fn(JsValue) -> Dom,
 }
 
 unsafe impl Sync for StoryMeta {}
 
-// Collect all registered stories using linkme
-#[linkme::distributed_slice]
-pub static STORIES: [StoryMeta] = [..];
+// Global registry for stories
+static STORY_REGISTRY: Lazy<Mutex<Vec<StoryMeta>>> = Lazy::new(|| Mutex::new(Vec::new()));
+
+/// Register a story with the global registry
+#[doc(hidden)]
+pub fn register_story(meta: StoryMeta) {
+    STORY_REGISTRY.lock().unwrap().push(meta);
+}
+
+/// Macro to help register stories - used by derive macro
+#[macro_export]
+macro_rules! __register_story {
+    ($ty:ty) => {{
+        $crate::register_story($crate::StoryMeta {
+            name: <$ty as $crate::Story>::name(),
+            args: <$ty as $crate::Story>::args,
+            render_fn: <$ty as $crate::Story>::render,
+        });
+    }};
+}
 
 /// Get all registered stories
 #[wasm_bindgen]
 pub fn get_stories() -> JsValue {
-    let stories: Vec<_> = STORIES
+    let stories: Vec<_> = STORY_REGISTRY
+        .lock()
+        .unwrap()
         .iter()
         .map(|meta| {
             serde_json::json!({
@@ -59,12 +77,13 @@ pub fn get_stories() -> JsValue {
 /// Render a story by name with the given arguments
 #[wasm_bindgen]
 pub fn render_story(name: &str, args: JsValue) -> Result<(), JsValue> {
-    let story = STORIES
+    let story = STORY_REGISTRY
+        .lock()
+        .unwrap()
         .iter()
         .find(|meta| meta.name == name)
+        .map(|meta| (meta.render_fn)(args.clone()))
         .ok_or_else(|| JsValue::from_str(&format!("Story '{}' not found", name)))?;
-    
-    let dom = (story.render_fn)(args);
     
     // Get the root element
     let window = web_sys::window().ok_or_else(|| JsValue::from_str("No window"))?;
@@ -77,7 +96,7 @@ pub fn render_story(name: &str, args: JsValue) -> Result<(), JsValue> {
     root.set_inner_html("");
     
     // Append the new DOM
-    dominator::append_dom(&root, dom);
+    dominator::append_dom(&root, story);
     
     Ok(())
 }
