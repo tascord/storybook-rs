@@ -37,6 +37,22 @@ pub struct Button {
     pub color: String,
 }
 
+impl Button {
+    /// Convert this button into a Dom node using dominator's builder pattern
+    pub fn into_dom(self) -> Dom {
+        html!("button", {
+            .text(&self.label)
+            .style("background-color", &self.color)
+            .style("color", "white")
+            .style("border", "none")
+            .style("padding", "10px 20px")
+            .style("border-radius", "4px")
+            .style("cursor", "pointer")
+            .style("font-size", "16px")
+        })
+    }
+}
+
 impl Story for Button {
     fn name() -> &'static str {
         Button::story_name()
@@ -52,16 +68,8 @@ impl Story for Button {
             color: "#007bff".to_string(),
         });
         
-        html!("button", {
-            .text(&button.label)
-            .style("background-color", &button.color)
-            .style("color", "white")
-            .style("border", "none")
-            .style("padding", "10px 20px")
-            .style("border-radius", "4px")
-            .style("cursor", "pointer")
-            .style("font-size", "16px")
-        })
+        // Use the into_dom method
+        button.into_dom()
     }
 }
 
@@ -71,6 +79,32 @@ pub struct Card {
     pub title: String,
     pub content: String,
     pub background: String,
+}
+
+impl Card {
+    /// Convert this card into a Dom node using dominator's builder pattern
+    pub fn into_dom(self) -> Dom {
+        html!("div", {
+            .style("background-color", &self.background)
+            .style("border", "1px solid #ddd")
+            .style("border-radius", "8px")
+            .style("padding", "20px")
+            .style("box-shadow", "0 2px 4px rgba(0,0,0,0.1)")
+            .style("max-width", "400px")
+            .children(&mut [
+                html!("h2", {
+                    .text(&self.title)
+                    .style("margin-top", "0")
+                    .style("margin-bottom", "10px")
+                }),
+                html!("p", {
+                    .text(&self.content)
+                    .style("margin", "0")
+                    .style("color", "#666")
+                }),
+            ])
+        })
+    }
 }
 
 impl Story for Card {
@@ -89,26 +123,8 @@ impl Story for Card {
             background: "#ffffff".to_string(),
         });
         
-        html!("div", {
-            .style("background-color", &card.background)
-            .style("border", "1px solid #ddd")
-            .style("border-radius", "8px")
-            .style("padding", "20px")
-            .style("box-shadow", "0 2px 4px rgba(0,0,0,0.1)")
-            .style("max-width", "400px")
-            .children(&mut [
-                html!("h2", {
-                    .text(&card.title)
-                    .style("margin-top", "0")
-                    .style("margin-bottom", "10px")
-                }),
-                html!("p", {
-                    .text(&card.content)
-                    .style("margin", "0")
-                    .style("color", "#666")
-                }),
-            ])
-        })
+        // Use the into_dom method
+        card.into_dom()
     }
 }
 
@@ -117,6 +133,22 @@ impl Story for Card {
 pub struct Input {
     pub placeholder: String,
     pub value: String,
+}
+
+impl Input {
+    /// Convert this input into a Dom node using dominator's builder pattern
+    pub fn into_dom(self) -> Dom {
+        html!("input" => web_sys::HtmlInputElement, {
+            .attr("type", "text")
+            .attr("placeholder", &self.placeholder)
+            .attr("value", &self.value)
+            .style("padding", "10px")
+            .style("border", "1px solid #ccc")
+            .style("border-radius", "4px")
+            .style("font-size", "14px")
+            .style("width", "200px")
+        })
+    }
 }
 
 impl Story for Input {
@@ -134,16 +166,8 @@ impl Story for Input {
             value: "".to_string(),
         });
         
-        html!("input" => web_sys::HtmlInputElement, {
-            .attr("type", "text")
-            .attr("placeholder", &input.placeholder)
-            .attr("value", &input.value)
-            .style("padding", "10px")
-            .style("border", "1px solid #ccc")
-            .style("border-radius", "4px")
-            .style("font-size", "14px")
-            .style("width", "200px")
-        })
+        // Use the into_dom method
+        input.into_dom()
     }
 }
 

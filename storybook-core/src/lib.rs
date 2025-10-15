@@ -27,6 +27,9 @@ pub struct ArgType {
 }
 
 /// Story trait that components must implement
+/// 
+/// Components can implement this trait and return any type that converts to Dom.
+/// This allows using dominator's builder patterns naturally.
 pub trait Story: 'static + Sync {
     /// Get the story name
     fn name() -> &'static str;
@@ -35,7 +38,26 @@ pub trait Story: 'static + Sync {
     fn args() -> Vec<ArgType>;
     
     /// Render the component with given args
+    /// 
+    /// This method should deserialize the args and return a Dom node.
+    /// You can use dominator's html! macro or implement custom rendering.
     fn render(args: JsValue) -> Dom;
+}
+
+/// Extension trait for types that can be converted to stories
+/// 
+/// This trait allows types to be used as stories by implementing
+/// a simple `to_dom()` method that returns a Dom node.
+pub trait IntoDom {
+    /// Convert this type into a Dom node
+    fn into_dom(self) -> Dom;
+}
+
+/// Blanket implementation for types that already are Dom
+impl IntoDom for Dom {
+    fn into_dom(self) -> Dom {
+        self
+    }
 }
 
 /// StorySelect trait for enums that should appear as select controls

@@ -6,6 +6,10 @@ use syn::{parse_macro_input, DeriveInput, Data, Fields};
 /// 
 /// This macro automatically generates helper implementations for the Story trait,
 /// extracting field information to generate ArgTypes for Storybook.
+/// 
+/// Components should implement an `into_dom(self) -> Dom` method to leverage
+/// dominator's builder patterns naturally. The Story trait's `render()` method
+/// can then simply deserialize and call `into_dom()`.
 #[proc_macro_derive(Story, attributes(story))]
 pub fn derive_story(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
