@@ -1,0 +1,11 @@
+/target
+/example/pkg
+node_modules
+*.wasm
+*.wasm.d.ts
+package-lock.json
+storybook-static
+.storybook
+
+# Auto-generated Storybook story files
+storybook/stories/*.stories.js

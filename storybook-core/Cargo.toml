@@ -1,0 +1,20 @@
+[package]
+name = "storybook-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+storybook-derive = { path = "../storybook-derive" }
+once_cell.workspace = true
+wasm-bindgen.workspace = true
+dominator.workspace = true
+futures-signals.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde-wasm-bindgen.workspace = true
+web-sys.workspace = true

@@ -1,0 +1,25 @@
+{
+  "name": "storybook-rs",
+  "version": "1.0.0",
+  "description": "Storybook for Rust WASM components",
+  "main": "index.js",
+  "directories": {
+    "example": "example"
+  },
+  "scripts": {
+    "build:wasm": "wasm-pack build --target web --out-dir pkg example",
+    "storybook": "npm run build:wasm && storybook dev -p 6006",
+    "build-storybook": "npm run build:wasm && storybook build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@storybook/addon-essentials": "^7.6.4",
+    "@storybook/addon-links": "^7.6.4",
+    "@storybook/web-components-vite": "^7.6.4",
+    "chromatic": "^13.3.3",
+    "storybook": "^7.6.4",
+    "vite": "^5.0.0"
+  }
+}
