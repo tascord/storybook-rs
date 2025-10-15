@@ -1,10 +1,36 @@
-use storybook_core::{Story, register_story, StoryMeta};
-use storybook_derive::Story as DeriveStory;
+use storybook_core::Story;
+use storybook_derive::{Story as DeriveStory, StorySelect as DeriveStorySelect};
 use dominator::{Dom, html};
 use wasm_bindgen::prelude::*;
 use serde::Deserialize;
 
-/// A simple button component
+/// Button size variants
+#[derive(DeriveStorySelect, Deserialize, Clone, Debug)]
+#[allow(dead_code)]
+pub enum ButtonSize {
+    Small,
+    Medium,
+    Large,
+}
+
+impl Default for ButtonSize {
+    fn default() -> Self {
+        ButtonSize::Medium
+    }
+}
+
+impl ButtonSize {
+    #[allow(dead_code)]
+    fn to_css(&self) -> &'static str {
+        match self {
+            ButtonSize::Small => "8px 16px",
+            ButtonSize::Medium => "10px 20px",
+            ButtonSize::Large => "12px 24px",
+        }
+    }
+}
+
+/// A simple button component with auto-registration
 #[derive(DeriveStory, Deserialize)]
 pub struct Button {
     pub label: String,
@@ -39,7 +65,7 @@ impl Story for Button {
     }
 }
 
-/// A simple card component
+/// A simple card component with auto-registration
 #[derive(DeriveStory, Deserialize)]
 pub struct Card {
     pub title: String,
@@ -86,7 +112,7 @@ impl Story for Card {
     }
 }
 
-/// A simple text input component
+/// A simple text input component with auto-registration
 #[derive(DeriveStory, Deserialize)]
 pub struct Input {
     pub placeholder: String,
@@ -121,24 +147,5 @@ impl Story for Input {
     }
 }
 
-// Register all stories
-#[wasm_bindgen]
-pub fn register_all_stories() {
-    register_story(StoryMeta {
-        name: Button::name(),
-        args: Button::args,
-        render_fn: Button::render,
-    });
-    
-    register_story(StoryMeta {
-        name: Card::name(),
-        args: Card::args,
-        render_fn: Card::render,
-    });
-    
-    register_story(StoryMeta {
-        name: Input::name(),
-        args: Input::args,
-        render_fn: Input::render,
-    });
-}
+// Automatically generate registration function using macro
+storybook_core::register_stories!(Button, Card, Input);

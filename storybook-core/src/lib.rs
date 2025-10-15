@@ -5,13 +5,25 @@ use std::sync::Mutex;
 use once_cell::sync::Lazy;
 
 // Re-export for use in derive macro
-pub use storybook_derive::Story;
+pub use storybook_derive::{Story, StorySelect, register_stories};
+
+/// Control type for Storybook args
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ControlType {
+    Text,
+    Select,
+    Color,
+    Boolean,
+    Number,
+}
 
 /// Argument type information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ArgType {
     pub name: String,
     pub ty: String,
+    pub control: ControlType,
 }
 
 /// Story trait that components must implement
@@ -24,6 +36,15 @@ pub trait Story: 'static + Sync {
     
     /// Render the component with given args
     fn render(args: JsValue) -> Dom;
+}
+
+/// StorySelect trait for enums that should appear as select controls
+pub trait StorySelect: 'static {
+    /// Get the enum type name
+    fn type_name() -> &'static str;
+    
+    /// Get all possible values as strings
+    fn options() -> Vec<String>;
 }
 
 /// Story metadata for registration
@@ -56,7 +77,7 @@ macro_rules! __register_story {
     }};
 }
 
-/// Get all registered stories
+/// Get all registered stories as Storybook-compatible format
 #[wasm_bindgen]
 pub fn get_stories() -> JsValue {
     let stories: Vec<_> = STORY_REGISTRY
@@ -64,9 +85,32 @@ pub fn get_stories() -> JsValue {
         .unwrap()
         .iter()
         .map(|meta| {
+            let args = (meta.args)();
+            let args_table: serde_json::Map<String, serde_json::Value> = args
+                .into_iter()
+                .map(|arg| {
+                    let control = match arg.control {
+                        ControlType::Text => serde_json::json!({ "type": "text" }),
+                        ControlType::Select => serde_json::json!({ "type": "select", "options": [] }),
+                        ControlType::Color => serde_json::json!({ "type": "color" }),
+                        ControlType::Boolean => serde_json::json!({ "type": "boolean" }),
+                        ControlType::Number => serde_json::json!({ "type": "number" }),
+                    };
+                    
+                    (
+                        arg.name.clone(),
+                        serde_json::json!({
+                            "control": control,
+                            "type": arg.ty,
+                        }),
+                    )
+                })
+                .collect();
+
             serde_json::json!({
-                "name": meta.name,
-                "args": (meta.args)(),
+                "title": format!("Components/{}", meta.name),
+                "component": meta.name,
+                "argTypes": args_table,
             })
         })
         .collect();
@@ -99,6 +143,12 @@ pub fn render_story(name: &str, args: JsValue) -> Result<(), JsValue> {
     dominator::append_dom(&root, story);
     
     Ok(())
+}
+
+/// Export stories in Storybook CSF (Component Story Format) compatible format
+#[wasm_bindgen]
+pub fn export_stories_csf() -> JsValue {
+    get_stories()
 }
 
 /// Initialize the storybook runtime

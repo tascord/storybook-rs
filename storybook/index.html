@@ -184,7 +184,7 @@
                 // Register all stories
                 register_all_stories();
 
-                // Get all registered stories
+                // Get all registered stories in Storybook CSF format
                 const stories = get_stories();
                 console.log('Loaded stories:', stories);
 
@@ -193,9 +193,34 @@
                 storyList.innerHTML = '';
 
                 stories.forEach((story, index) => {
-                    // Extract properties from the Map-like object
-                    const storyName = story.get ? story.get('name') : story.name;
-                    const storyArgs = story.get ? story.get('args') : story.args;
+                    // Extract properties from CSF format
+                    // Story format: { title: "Components/Button", component: "Button", argTypes: {...} }
+                    const storyName = story.get ? story.get('component') : story.component;
+                    const argTypes = story.get ? story.get('argTypes') : story.argTypes;
+                    
+                    // Convert argTypes Map to array of args
+                    const storyArgs = [];
+                    if (argTypes) {
+                        if (argTypes.entries) {
+                            // It's a Map
+                            for (const [name, value] of argTypes.entries()) {
+                                storyArgs.push({
+                                    name: name,
+                                    ty: value.type || 'String',
+                                    control: value.control || { type: 'text' }
+                                });
+                            }
+                        } else {
+                            // It's an object
+                            Object.entries(argTypes).forEach(([name, value]) => {
+                                storyArgs.push({
+                                    name: name,
+                                    ty: value.type || 'String',
+                                    control: value.control || { type: 'text' }
+                                });
+                            });
+                        }
+                    }
                     
                     const li = document.createElement('li');
                     li.className = 'story-item';
