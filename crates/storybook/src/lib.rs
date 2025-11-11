@@ -5,7 +5,7 @@ use std::sync::Mutex;
 use once_cell::sync::Lazy;
 
 // Re-export for use in derive macro
-pub use storybook_derive::{Story, StorySelect, register_stories};
+pub use storybook_derive::{register_stories, Story as StoryDerive, StorySelect, register_enums};
 
 /// Control type for Storybook args
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -22,26 +22,24 @@ pub enum ControlType {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ArgType {
     pub name: String,
-    pub ty: String,
+    pub default_value: Option<String>,
     pub control: ControlType,
+    pub required: bool,
 }
 
 /// Story trait that components must implement
-/// 
+///
 /// Components can implement this trait and return any type that converts to Dom.
 /// This allows using dominator's builder patterns naturally.
-pub trait Story: 'static + Sync {
-    /// Get the story name
+pub trait Story: 'static + Sized + for<'de> Deserialize<'de> {
+    /// Convert this type into a Dom node
+    fn into_dom(self) -> Dom;
+}
+
+/// Trait for story metadata, to be implemented by the derive macro
+pub trait StoryMeta {
     fn name() -> &'static str;
-    
-    /// Get argument types for this story
     fn args() -> Vec<ArgType>;
-    
-    /// Render the component with given args
-    /// 
-    /// This method should deserialize the args and return a Dom node.
-    /// You can use dominator's html! macro or implement custom rendering.
-    fn render(args: JsValue) -> Dom;
 }
 
 /// Extension trait for types that can be converted to stories
@@ -70,16 +68,16 @@ pub trait StorySelect: 'static {
 }
 
 /// Story metadata for registration
-pub struct StoryMeta {
+pub struct StoryRegistration {
     pub name: &'static str,
     pub args: fn() -> Vec<ArgType>,
     pub render_fn: fn(JsValue) -> Dom,
 }
 
-unsafe impl Sync for StoryMeta {}
+unsafe impl Sync for StoryRegistration {}
 
 // Global registry for stories
-static STORY_REGISTRY: Lazy<Mutex<Vec<StoryMeta>>> = Lazy::new(|| Mutex::new(Vec::new()));
+static STORY_REGISTRY: Lazy<Mutex<Vec<StoryRegistration>>> = Lazy::new(|| Mutex::new(Vec::new()));
 
 // Global registry for enum options
 static ENUM_REGISTRY: Lazy<Mutex<std::collections::HashMap<String, Vec<String>>>> = 
@@ -87,8 +85,16 @@ static ENUM_REGISTRY: Lazy<Mutex<std::collections::HashMap<String, Vec<String>>>
 
 /// Register a story with the global registry
 #[doc(hidden)]
-pub fn register_story(meta: StoryMeta) {
-    STORY_REGISTRY.lock().unwrap().push(meta);
+pub fn register_story<T: Story + StoryMeta>() {
+    let registration = StoryRegistration {
+        name: T::name(),
+        args: T::args,
+        render_fn: |args: JsValue| {
+            let component: T = serde_wasm_bindgen::from_value(args).unwrap();
+            component.into_dom()
+        },
+    };
+    STORY_REGISTRY.lock().unwrap().push(registration);
 }
 
 /// Register an enum's options with the global registry
@@ -127,42 +133,45 @@ macro_rules! __register_story {
 /// Get all registered stories as Storybook-compatible format
 #[wasm_bindgen]
 pub fn get_stories() -> JsValue {
-    let stories: Vec<_> = STORY_REGISTRY
-        .lock()
-        .unwrap()
+    let stories = STORY_REGISTRY.lock().unwrap();
+    let story_defs: Vec<_> = stories
         .iter()
         .map(|meta| {
             let args = (meta.args)();
-            let args_table: serde_json::Map<String, serde_json::Value> = args
-                .into_iter()
-                .map(|arg| {
-                    let control = match arg.control {
-                        ControlType::Text => serde_json::json!({ "type": "text" }),
-                        ControlType::Select => serde_json::json!({ "type": "select", "options": [] }),
-                        ControlType::Color => serde_json::json!({ "type": "color" }),
-                        ControlType::Boolean => serde_json::json!({ "type": "boolean" }),
-                        ControlType::Number => serde_json::json!({ "type": "number" }),
-                    };
-                    
-                    (
-                        arg.name.clone(),
-                        serde_json::json!({
-                            "control": control,
-                            "type": arg.ty,
-                        }),
-                    )
-                })
-                .collect();
+            let mut arg_types = serde_json::Map::new();
+            let mut default_args = serde_json::Map::new();
+
+            for arg in args {
+                let control = serde_json::to_value(&arg.control).unwrap();
+
+                let mut table = std::collections::HashMap::new();
+                if arg.required {
+                    table.insert("category".to_string(), "required".to_string());
+                } else {
+                    table.insert("category".to_string(), "optional".to_string());
+                }
+
+                let mut arg_map = serde_json::Map::new();
+                arg_map.insert("name".to_string(), serde_json::Value::String(arg.name.clone()));
+                arg_map.insert("control".to_string(), control);
+                arg_map.insert("table".to_string(), serde_json::to_value(table).unwrap());
+
+                if let Some(default) = arg.default_value {
+                    default_args.insert(arg.name.clone(), serde_json::Value::String(default));
+                }
+
+                arg_types.insert(arg.name, serde_json::Value::Object(arg_map));
+            }
 
             serde_json::json!({
-                "title": format!("Components/{}", meta.name),
-                "component": meta.name,
-                "argTypes": args_table,
+                "name": meta.name,
+                "argTypes": arg_types,
+                "args": default_args,
             })
         })
         .collect();
-    
-    serde_wasm_bindgen::to_value(&stories).unwrap()
+
+    serde_wasm_bindgen::to_value(&story_defs).unwrap()
 }
 
 /// Render a story by name with the given arguments

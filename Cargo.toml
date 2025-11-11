@@ -1,7 +1,7 @@
 [workspace]
 members = [
-    "storybook-derive",
-    "storybook-core",
+    "crates/storybook-derive",
+    "crates/storybook",
     "example"
 ]
 resolver = "2"

@@ -1,11 +1,10 @@
-use storybook::Story;
-use storybook_derive::{Story as DeriveStory, StorySelect as DeriveStorySelect};
-use dominator::{Dom, html};
-use wasm_bindgen::prelude::*;
+use dominator::{html, Dom};
 use serde::Deserialize;
+use storybook::Story;
+use storybook::{StoryDerive, StorySelect};
 
 /// Button size variants
-#[derive(DeriveStorySelect, Deserialize, Clone, Debug)]
+#[derive(StorySelect, Deserialize, Clone, Debug)]
 #[allow(dead_code)]
 pub enum ButtonSize {
     Small,
@@ -31,7 +30,7 @@ impl ButtonSize {
 }
 
 /// A simple button component with auto-registration
-#[derive(DeriveStory, Deserialize)]
+#[derive(StoryDerive, Deserialize)]
 pub struct Button {
     #[story(default = "'Click Me!'")]
     pub label: String,
@@ -40,9 +39,9 @@ pub struct Button {
     pub disabled: Option<bool>,
 }
 
-impl Button {
+impl Story for Button {
     /// Convert this button into a Dom node using dominator's builder pattern
-    pub fn into_dom(self) -> Dom {
+    fn into_dom(self) -> Dom {
         let is_disabled = self.disabled.unwrap_or(false);
         html!("button", {
             .text(&self.label)
@@ -59,29 +58,8 @@ impl Button {
     }
 }
 
-impl Story for Button {
-    fn name() -> &'static str {
-        Button::story_name()
-    }
-
-    fn args() -> Vec<storybook::ArgType> {
-        Button::story_args()
-    }
-
-    fn render(args: JsValue) -> Dom {
-        let button: Button = serde_wasm_bindgen::from_value(args).unwrap_or(Button {
-            label: "Click me".to_string(),
-            color: "#007bff".to_string(),
-            disabled: None,
-        });
-        
-        // Use the into_dom method
-        button.into_dom()
-    }
-}
-
 /// A simple card component with auto-registration
-#[derive(DeriveStory, Deserialize)]
+#[derive(StoryDerive, Deserialize)]
 pub struct Card {
     pub title: String,
     pub content: String,
@@ -89,9 +67,9 @@ pub struct Card {
     pub background: String,
 }
 
-impl Card {
+impl Story for Card {
     /// Convert this card into a Dom node using dominator's builder pattern
-    pub fn into_dom(self) -> Dom {
+    fn into_dom(self) -> Dom {
         html!("div", {
             .style("background-color", &self.background)
             .style("border", "1px solid #ddd")
@@ -115,37 +93,16 @@ impl Card {
     }
 }
 
-impl Story for Card {
-    fn name() -> &'static str {
-        Card::story_name()
-    }
-
-    fn args() -> Vec<storybook::ArgType> {
-        Card::story_args()
-    }
-
-    fn render(args: JsValue) -> Dom {
-        let card: Card = serde_wasm_bindgen::from_value(args).unwrap_or(Card {
-            title: "Card Title".to_string(),
-            content: "This is card content".to_string(),
-            background: "#ffffff".to_string(),
-        });
-        
-        // Use the into_dom method
-        card.into_dom()
-    }
-}
-
 /// A simple text input component with auto-registration
-#[derive(DeriveStory, Deserialize)]
+#[derive(StoryDerive, Deserialize)]
 pub struct Input {
     pub placeholder: String,
     pub value: String,
 }
 
-impl Input {
+impl Story for Input {
     /// Convert this input into a Dom node using dominator's builder pattern
-    pub fn into_dom(self) -> Dom {
+    fn into_dom(self) -> Dom {
         html!("input" => web_sys::HtmlInputElement, {
             .attr("type", "text")
             .attr("placeholder", &self.placeholder)
@@ -159,28 +116,8 @@ impl Input {
     }
 }
 
-impl Story for Input {
-    fn name() -> &'static str {
-        Input::story_name()
-    }
-
-    fn args() -> Vec<storybook::ArgType> {
-        Input::story_args()
-    }
-
-    fn render(args: JsValue) -> Dom {
-        let input: Input = serde_wasm_bindgen::from_value(args).unwrap_or(Input {
-            placeholder: "Enter text...".to_string(),
-            value: "".to_string(),
-        });
-        
-        // Use the into_dom method
-        input.into_dom()
-    }
-}
-
 /// Alert severity levels
-#[derive(DeriveStorySelect, Deserialize, Clone, Debug)]
+#[derive(StorySelect, Deserialize, Clone, Debug)]
 pub enum AlertType {
     Info,
     Success,
@@ -206,15 +143,15 @@ impl AlertType {
 }
 
 /// An alert component demonstrating enum select controls
-#[derive(DeriveStory, Deserialize)]
+#[derive(StoryDerive, Deserialize)]
 pub struct Alert {
     pub message: String,
     #[story(control = "select")]
     pub alert_type: AlertType,
 }
 
-impl Alert {
-    pub fn into_dom(self) -> Dom {
+impl Story for Alert {
+    fn into_dom(self) -> Dom {
         html!("div", {
             .text(&self.message)
             .style("padding", "15px 20px")
@@ -227,30 +164,6 @@ impl Alert {
     }
 }
 
-impl Story for Alert {
-    fn name() -> &'static str {
-        Alert::story_name()
-    }
-
-    fn args() -> Vec<storybook::ArgType> {
-        Alert::story_args()
-    }
-
-    fn render(args: JsValue) -> Dom {
-        let alert: Alert = serde_wasm_bindgen::from_value(args).unwrap_or(Alert {
-            message: "This is an alert message".to_string(),
-            alert_type: AlertType::default(),
-        });
-        
-        alert.into_dom()
-    }
-}
-
 // Automatically generate registration function using macro
 storybook::register_stories!(Button, Card, Input, Alert);
-
-// Also need to register enums - this should be called before stories are used
-#[wasm_bindgen]
-pub fn init_enums() {
-    AlertType::__register_enum_options();
-}
+storybook::register_enums!(AlertType, ButtonSize);

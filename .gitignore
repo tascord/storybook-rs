@@ -9,3 +9,4 @@ storybook-static
 
 # Auto-generated Storybook story files
 storybook/stories/*.stories.js
+example/pkg/
