@@ -241,10 +241,10 @@ pub fn derive_story(input: TokenStream) -> TokenStream {
         let field_ty = &field.ty;
         
         quote! {
-            storybook_core::ArgType {
+            storybook::ArgType {
                 name: #field_name_str.to_string(),
                 ty: std::any::type_name::<#field_ty>().to_string(),
-                control: storybook_core::ControlType::Text,
+                control: storybook::ControlType::Text,
             }
         }
     });
@@ -256,7 +256,7 @@ pub fn derive_story(input: TokenStream) -> TokenStream {
                 #name_str
             }
 
-            pub fn story_args() -> Vec<storybook_core::ArgType> {
+            pub fn story_args() -> Vec<storybook::ArgType> {
                 vec![
                     #(#arg_types),*
                 ]
@@ -264,7 +264,7 @@ pub fn derive_story(input: TokenStream) -> TokenStream {
             
             /// Register this story with the global registry
             pub fn register() {
-                storybook_core::register_story(storybook_core::StoryMeta {
+                storybook::register_story(storybook::StoryMeta {
                     name: #name::name(),
                     args: #name::args,
                     render_fn: #name::render,
@@ -328,7 +328,7 @@ pub fn derive_story_select(input: TokenStream) -> TokenStream {
 
     // Generate implementation
     let expanded = quote! {
-        impl #impl_generics storybook_core::StorySelect for #name #ty_generics #where_clause {
+        impl #impl_generics storybook::StorySelect for #name #ty_generics #where_clause {
             fn type_name() -> &'static str {
                 #name_str
             }
@@ -344,9 +344,9 @@ pub fn derive_story_select(input: TokenStream) -> TokenStream {
         impl #impl_generics #name #ty_generics #where_clause {
             #[doc(hidden)]
             pub fn __register_enum_options() {
-                storybook_core::register_enum_options(
+                storybook::register_enum_options(
                     #name_str,
-                    <#name as storybook_core::StorySelect>::options()
+                    <#name as storybook::StorySelect>::options()
                 );
             }
         }

@@ -1,4 +1,4 @@
-use storybook_core::Story;
+use storybook::Story;
 use storybook_derive::{Story as DeriveStory, StorySelect as DeriveStorySelect};
 use dominator::{Dom, html};
 use wasm_bindgen::prelude::*;
@@ -64,7 +64,7 @@ impl Story for Button {
         Button::story_name()
     }
 
-    fn args() -> Vec<storybook_core::ArgType> {
+    fn args() -> Vec<storybook::ArgType> {
         Button::story_args()
     }
 
@@ -120,7 +120,7 @@ impl Story for Card {
         Card::story_name()
     }
 
-    fn args() -> Vec<storybook_core::ArgType> {
+    fn args() -> Vec<storybook::ArgType> {
         Card::story_args()
     }
 
@@ -164,7 +164,7 @@ impl Story for Input {
         Input::story_name()
     }
 
-    fn args() -> Vec<storybook_core::ArgType> {
+    fn args() -> Vec<storybook::ArgType> {
         Input::story_args()
     }
 
@@ -232,7 +232,7 @@ impl Story for Alert {
         Alert::story_name()
     }
 
-    fn args() -> Vec<storybook_core::ArgType> {
+    fn args() -> Vec<storybook::ArgType> {
         Alert::story_args()
     }
 
@@ -247,7 +247,7 @@ impl Story for Alert {
 }
 
 // Automatically generate registration function using macro
-storybook_core::register_stories!(Button, Card, Input, Alert);
+storybook::register_stories!(Button, Card, Input, Alert);
 
 // Also need to register enums - this should be called before stories are used
 #[wasm_bindgen]
