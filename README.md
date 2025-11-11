@@ -2,12 +2,24 @@
 
 Storybook integration for Rust WebAssembly components using dominator.
 
+## Installation
+
+Add to your `Cargo.toml`:
+
+```toml
+[dependencies]
+storybook-rs = "0.1"
+serde = { version = "1.0", features = ["derive"] }
+dominator = "0.5"
+wasm-bindgen = "0.2"
+```
+
 ## Usage
 
 1. **Add the derive macro to your component:**
 
 ```rust
-use storybook_derive::{Story, StorySelect};
+use storybook_rs::{Story, StorySelect};
 use dominator::Dom;
 use serde::Deserialize;
 

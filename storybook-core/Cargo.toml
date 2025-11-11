@@ -1,5 +1,5 @@
 [package]
-name = "storybook-core"
+name = "storybook-rs"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -9,7 +9,7 @@ authors.workspace = true
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-storybook-derive = { path = "../storybook-derive" }
+storybook-derive = { path = "../storybook-derive", version = "0.1.0" }
 once_cell.workspace = true
 wasm-bindgen.workspace = true
 dominator.workspace = true

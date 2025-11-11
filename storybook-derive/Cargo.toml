@@ -1,5 +1,5 @@
 [package]
-name = "storybook-derive"
+name = "storybook-rs-derive"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
