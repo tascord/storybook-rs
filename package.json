@@ -1,5 +1,5 @@
 {
-  "name": "storybook-rs",
+  "name": "storybook",
   "version": "1.0.0",
   "description": "Storybook for Rust WASM components",
   "main": "index.js",

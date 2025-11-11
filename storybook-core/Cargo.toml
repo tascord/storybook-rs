@@ -1,5 +1,5 @@
 [package]
-name = "storybook-rs"
+name = "storybook"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

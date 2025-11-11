@@ -12,7 +12,7 @@ crate-type = ["cdylib", "rlib"]
 wasm-opt = false
 
 [dependencies]
-storybook-core = { path = "../storybook-core", version = "0.1.0" }
+storybook = { path = "../storybook-core", version = "0.1.0" }
 storybook-derive = { path = "../storybook-derive", version = "0.1.0" }
 wasm-bindgen.workspace = true
 dominator.workspace = true

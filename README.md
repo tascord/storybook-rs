@@ -1,4 +1,4 @@
-# storybook-rs
+# storybook
 
 Storybook integration for Rust WebAssembly components using dominator.
 
@@ -8,7 +8,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-storybook-rs = "0.1"
+storybook = "0.1"
 serde = { version = "1.0", features = ["derive"] }
 dominator = "0.5"
 wasm-bindgen = "0.2"
