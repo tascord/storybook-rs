@@ -10,7 +10,7 @@ resolver = "2"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
-metadata = "Bridging tool for Rust WASM components to Storybook"
+description = "Bridging tool for Rust WASM components to Storybook"
 authors = []
 
 [workspace.dependencies]
