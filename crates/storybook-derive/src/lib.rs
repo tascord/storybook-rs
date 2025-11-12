@@ -3,12 +3,13 @@ use quote::quote;
 use syn::{parse_macro_input, DeriveInput, Data, Fields};
 
 // Helper to extract story attributes from a field
-// Returns: (control_type, default_value, from_type, lorem_word_count)
-fn get_story_attrs(field: &syn::Field) -> (Option<String>, Option<String>, Option<syn::Type>, Option<usize>) {
+// Returns: (control_type, default_value, from_type, lorem_word_count, skip)
+fn get_story_attrs(field: &syn::Field) -> (Option<String>, Option<String>, Option<syn::Type>, Option<usize>, bool) {
     let mut control_type = None;
     let mut default_value = None;
     let mut from_type = None;
     let mut lorem_count = None;
+    let mut skip = false;
 
     for attr in &field.attrs {
         if attr.path().is_ident("story") {
@@ -45,13 +46,15 @@ fn get_story_attrs(field: &syn::Field) -> (Option<String>, Option<String>, Optio
                         // No value specified, use default of 8
                         lorem_count = Some(8);
                     }
+                } else if meta.path.is_ident("skip") {
+                    skip = true;
                 }
                 Ok(())
             });
         }
     }
 
-    (control_type, default_value, from_type, lorem_count)
+    (control_type, default_value, from_type, lorem_count, skip)
 }
 
 // Generate lorem ipsum text with specified number of words
@@ -171,15 +174,20 @@ pub fn derive_story(input: TokenStream) -> TokenStream {
         _ => panic!("Story can only be derived for structs"),
     };
 
-    let story_args_fields = fields.iter().map(|field| {
+    let story_args_fields = fields.iter().filter_map(|field| {
         let field_name = &field.ident;
         let field_ty = &field.ty;
-        let (control_type, _, from_type, _) = get_story_attrs(field);
+        let (control_type, _, from_type, _, skip) = get_story_attrs(field);
+        
+        // Skip fields marked with #[story(skip)]
+        if skip {
+            return None;
+        }
         
         // Make select control fields optional so they can deserialize from undefined
         let should_be_optional = control_type.as_ref().map(|c| c == "select").unwrap_or(false);
 
-        if let Some(from_type) = from_type {
+        let field_def = if let Some(from_type) = from_type {
             if should_be_optional {
                 quote! {
                     #[serde(default)]
@@ -203,12 +211,20 @@ pub fn derive_story(input: TokenStream) -> TokenStream {
                     pub #field_name: #field_ty
                 }
             }
-        }
+        };
+        
+        Some(field_def)
     });
 
     let from_impl_fields = fields.iter().map(|field| {
         let field_name = &field.ident;
-        let (control_type, _, _, _) = get_story_attrs(field);
+        let (control_type, _, _, _, skip) = get_story_attrs(field);
+        
+        if skip {
+            // For skipped fields, use Default::default()
+            return quote! { #field_name: Default::default() };
+        }
+        
         let should_be_optional = control_type.as_ref().map(|c| c == "select").unwrap_or(false);
         
         if should_be_optional {
@@ -221,15 +237,21 @@ pub fn derive_story(input: TokenStream) -> TokenStream {
 
     // Generate arg type information for each field
     let mut arg_types_for_js: Vec<(String, String, String, String, String)> = Vec::new();
+    let mut arg_types_vec = Vec::new();
     
-    let arg_types = fields.iter().map(|field| {
+    for field in fields.iter() {
         let field_name = &field.ident;
         let field_name_str = field_name.as_ref().unwrap().to_string();
         let field_ty = &field.ty;
         let ty_string = quote!(#field_ty).to_string();
         let is_option = ty_string.starts_with("Option <");
 
-        let (control_type, default_value, from_type, lorem_count) = get_story_attrs(field);
+        let (control_type, default_value, from_type, lorem_count, skip) = get_story_attrs(field);
+        
+        // Skip fields marked with #[story(skip)]
+        if skip {
+            continue;
+        }
 
         let mut options = quote! { None };
         let mut options_json = String::new();
@@ -325,7 +347,7 @@ pub fn derive_story(input: TokenStream) -> TokenStream {
             options_json,
         ));
 
-        quote! {
+        arg_types_vec.push(quote! {
             storybook::ArgType {
                 name: #field_name_str.to_string(),
                 default_value: #default_value_quoted,
@@ -333,8 +355,8 @@ pub fn derive_story(input: TokenStream) -> TokenStream {
                 required: !#is_option,
                 options: #options,
             }
-        }
-    }).collect::<Vec<_>>();
+        });
+    }
 
     // Generate the Storybook JavaScript file
     generate_storybook_js(&name_str, fields, &arg_types_for_js);
@@ -363,7 +385,7 @@ pub fn derive_story(input: TokenStream) -> TokenStream {
 
             fn args() -> Vec<storybook::ArgType> {
                 vec![
-                    #(#arg_types),*
+                    #(#arg_types_vec),*
                 ]
             }
         }

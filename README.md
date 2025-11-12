@@ -65,6 +65,7 @@ pub struct Alert {
 - `#[story(default = "'value'")]` - Custom default value
 - `#[story(from = "usize")]` - Type conversion via `From` trait
 - `#[story(lorem = "N")]` - Auto-generate N words of lorem ipsum (defaults to 8 if no N)
+- `#[story(skip)]` - Skip field in Storybook (useful for callbacks, closures, etc.)
 
 4. **Register components:**
 

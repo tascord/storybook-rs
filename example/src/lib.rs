@@ -1,6 +1,7 @@
 use dominator::{html, Dom};
 use futures_signals::signal::{Mutable, SignalExt};
 use serde::Deserialize;
+use std::sync::Arc;
 use storybook::Story;
 use storybook::{StoryDerive, StorySelect};
 
@@ -34,6 +35,10 @@ pub struct Button {
     #[story(control = "select")]
     pub size: ButtonSize,
     pub disabled: Option<bool>,
+    #[story(skip)]
+    #[serde(skip)]
+    #[serde(default)]
+    pub on_click: Option<Arc<dyn Fn()>>,
 }
 
 impl Story for Button {
