@@ -41,14 +41,13 @@ dependencies = [
 
 [[package]]
 name = "example"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "dominator",
  "futures-signals",
  "serde",
  "serde-wasm-bindgen",
  "storybook",
- "storybook-derive",
  "wasm-bindgen",
  "web-sys",
 ]
@@ -319,10 +318,9 @@ checksum = "7a2ae44ef20feb57a68b23d846850f861394c2e02dc425a50098ae8c90267589"
 
 [[package]]
 name = "storybook"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "dominator",
- "futures-signals",
  "once_cell",
  "serde",
  "serde-wasm-bindgen",
@@ -334,7 +332,7 @@ dependencies = [
 
 [[package]]
 name = "storybook-derive"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "proc-macro2",
  "quote",

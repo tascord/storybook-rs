@@ -13,11 +13,10 @@ crate-type = ["cdylib", "rlib"]
 wasm-opt = false
 
 [dependencies]
-storybook = { path = "../crates/storybook", version = "0.1.0" }
-storybook-derive = { path = "../crates/storybook-derive", version = "0.1.0" }
+storybook = { path = "../crates/storybook", version = "0.2.0" }
 wasm-bindgen.workspace = true
 dominator.workspace = true
-futures-signals.workspace = true
 web-sys.workspace = true
 serde.workspace = true
 serde-wasm-bindgen.workspace = true
+futures-signals = "0.3"

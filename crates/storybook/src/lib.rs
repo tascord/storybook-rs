@@ -25,19 +25,20 @@ pub struct ArgType {
     pub default_value: Option<String>,
     pub control: ControlType,
     pub required: bool,
+    pub options: Option<Vec<String>>,
 }
 
 /// Story trait that components must implement
 ///
 /// Components can implement this trait and return any type that converts to Dom.
 /// This allows using dominator's builder patterns naturally.
-pub trait Story: 'static + Sized + for<'de> Deserialize<'de> {
-    /// Convert this type into a Dom node
-    fn into_dom(self) -> Dom;
+pub trait Story: 'static + Sized {
+    fn to_story(self) -> Dom;
 }
 
 /// Trait for story metadata, to be implemented by the derive macro
-pub trait StoryMeta {
+pub trait StoryMeta: Sized {
+    type StoryArgs: for<'de> Deserialize<'de> + Into<Self>;
     fn name() -> &'static str;
     fn args() -> Vec<ArgType>;
 }
@@ -46,14 +47,14 @@ pub trait StoryMeta {
 /// 
 /// This trait allows types to be used as stories by implementing
 /// a simple `to_dom()` method that returns a Dom node.
-pub trait IntoDom {
+pub trait IntoStory {
     /// Convert this type into a Dom node
-    fn into_dom(self) -> Dom;
+    fn to_story(self) -> Dom;
 }
 
 /// Blanket implementation for types that already are Dom
-impl IntoDom for Dom {
-    fn into_dom(self) -> Dom {
+impl IntoStory for Dom {
+    fn to_story(self) -> Dom {
         self
     }
 }
@@ -90,8 +91,9 @@ pub fn register_story<T: Story + StoryMeta>() {
         name: T::name(),
         args: T::args,
         render_fn: |args: JsValue| {
-            let component: T = serde_wasm_bindgen::from_value(args).unwrap();
-            component.into_dom()
+            let component: T::StoryArgs = serde_wasm_bindgen::from_value(args).unwrap();
+            let story: T = component.into();
+            story.to_story()
         },
     };
     STORY_REGISTRY.lock().unwrap().push(registration);

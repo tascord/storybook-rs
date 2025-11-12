@@ -45,18 +45,3 @@ The Rust components automatically export argTypes in Storybook-compatible format
   }
 }
 ```
-
-## Enum Support
-
-Enums derived with `#[derive(StorySelect)]` are automatically converted to select controls:
-
-```rust
-#[derive(StorySelect)]
-pub enum ButtonSize {
-    Small,
-    Medium,
-    Large,
-}
-```
-
-This will generate a select dropdown with the three options.

@@ -15,11 +15,11 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@storybook/addon-essentials": "^7.6.4",
-    "@storybook/addon-links": "^7.6.4",
-    "@storybook/web-components-vite": "^7.6.4",
+    "@storybook/addon-links": "^10.0.7",
+    "@storybook/web-components-vite": "^10.0.7",
     "chromatic": "^13.3.3",
-    "storybook": "^7.6.4",
-    "vite": "^5.0.0"
+    "storybook": "^10.0.7",
+    "vite": "^5.0.0",
+    "@storybook/addon-docs": "^10.0.7"
   }
 }

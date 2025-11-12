@@ -8,7 +8,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-storybook = "0.1"
+storybook = "0.2"
 serde = { version = "1.0", features = ["derive"] }
 dominator = "0.5"
 wasm-bindgen = "0.2"
@@ -16,101 +16,66 @@ wasm-bindgen = "0.2"
 
 ## Usage
 
-1. **Add the derive macro to your component:**
+1. **Define your component with the derive macro:**
 
 ```rust
-use storybook_rs::{Story, StorySelect};
+use storybook::Story;
 use dominator::Dom;
 use serde::Deserialize;
 
-#[derive(Story, Deserialize)]
+#[derive(StoryDerive, Deserialize)]
 pub struct Button {
     pub label: String,
-    #[story(control = "color")]
+    #[story(control = "color", default = "'#007bff'")]
     pub color: String,
 }
 
-impl Button {
-    pub fn into_dom(self) -> Dom {
+impl Story for Button {
+    fn to_story(self) -> Dom {
         // Your dominator component implementation
     }
 }
 ```
 
-2. **For enum types, use `StorySelect`:**
+2. **For enums, use `StorySelect`:**
 
 ```rust
-#[derive(StorySelect, Deserialize, Clone, Debug)]
+#[derive(StorySelect, Deserialize, Clone, Debug, Default)]
 pub enum AlertType {
+    #[default]
     Info,
     Success,
     Warning,
     Error,
 }
 
-#[derive(Story, Deserialize)]
+#[derive(StoryDerive, Deserialize)]
 pub struct Alert {
+    #[story(lorem = "5")]
     pub message: String,
     #[story(control = "select")]
     pub alert_type: AlertType,
 }
 ```
 
-The `StorySelect` derive automatically implements `FromStr` and `Display` for your enum.
-
-3. **Available control attributes:**
+3. **Field attributes:**
 
 - `#[story(control = "color")]` - Color picker
-- `#[story(control = "select")]` - Dropdown select (for enums)
-- `#[story(control = "range")]` - Range slider
-- `#[story(control = "boolean")]` - Toggle
-- `#[story(control = "number")]` - Number input
-- `#[story(control = "text")]` - Text input (default for strings)
+- `#[story(control = "select")]` - Dropdown (for enums, auto-defaults to first variant)
+- `#[story(default = "'value'")]` - Custom default value
+- `#[story(from = "usize")]` - Type conversion via `From` trait
+- `#[story(lorem = "N")]` - Auto-generate N words of lorem ipsum (defaults to 8 if no N)
 
-4. **Custom default values:**
-
-You can specify custom default values for Storybook controls:
+4. **Register components:**
 
 ```rust
-#[derive(Story, Deserialize)]
-pub struct Button {
-    #[story(default = "'Click Me!'")]
-    pub label: String,
-    #[story(control = "color", default = "'#007bff'")]
-    pub color: String,
-}
+storybook::register_stories!(Button, Alert);
+storybook::register_enums!(AlertType);
 ```
 
-5. **Optional fields:**
-
-Fields with `Option<T>` type are automatically marked as optional in Storybook:
-
-```rust
-#[derive(Story, Deserialize)]
-pub struct Button {
-    pub label: String,           // Required field
-    pub disabled: Option<bool>,  // Optional field (defaults to undefined)
-}
-```
-
-6. **Build your WASM component:**
+5. **Build:**
 
 ```bash
-cd example
-cargo build  # Automatically generates .stories.js files
-wasm-pack build --target web
+npm run build:wasm  # Generates .stories.js files + WASM
+npm run storybook   # Start Storybook dev server
 ```
-
-The `#[derive(Story)]` macro automatically generates corresponding `.stories.js` files in `storybook/stories/` during compilation.
-
-7. **Run Storybook:**
-
-```bash
-npm run storybook
-```
-
-That's it! No manual JavaScript needed - the macro handles it all.
-
-## License
-
-MIT

@@ -1,25 +1,20 @@
 use dominator::{html, Dom};
+use futures_signals::signal::{Mutable, SignalExt};
 use serde::Deserialize;
 use storybook::Story;
 use storybook::{StoryDerive, StorySelect};
 
 /// Button size variants
-#[derive(StorySelect, Deserialize, Clone, Debug)]
+#[derive(StorySelect, Deserialize, Clone, Debug, Default)]
 #[allow(dead_code)]
 pub enum ButtonSize {
     Small,
+    #[default]
     Medium,
     Large,
 }
 
-impl Default for ButtonSize {
-    fn default() -> Self {
-        ButtonSize::Medium
-    }
-}
-
 impl ButtonSize {
-    #[allow(dead_code)]
     fn to_css(&self) -> &'static str {
         match self {
             ButtonSize::Small => "8px 16px",
@@ -32,23 +27,30 @@ impl ButtonSize {
 /// A simple button component with auto-registration
 #[derive(StoryDerive, Deserialize)]
 pub struct Button {
-    #[story(default = "'Click Me!'")]
-    pub label: String,
+    #[story(from = "usize", default = "0")]
+    pub count: Mutable<usize>,
     #[story(control = "color", default = "'#007bff'")]
     pub color: String,
+    #[story(control = "select")]
+    pub size: ButtonSize,
     pub disabled: Option<bool>,
 }
 
 impl Story for Button {
-    /// Convert this button into a Dom node using dominator's builder pattern
-    fn into_dom(self) -> Dom {
+    fn to_story(self) -> Dom {
         let is_disabled = self.disabled.unwrap_or(false);
         html!("button", {
-            .text(&self.label)
+            .text_signal(self.count.signal().map(|n| format!("Clicked {n} times")))
+            .event({
+                let count = self.count.clone();
+                move |_: dominator::events::Click| {
+                    count.replace_with(|x| *x + 1);
+                }
+            })
             .style("background-color", &self.color)
             .style("color", "white")
             .style("border", "none")
-            .style("padding", "10px 20px")
+            .style("padding", self.size.to_css())
             .style("border-radius", "4px")
             .style("cursor", if is_disabled { "not-allowed" } else { "pointer" })
             .style("font-size", "16px")
@@ -61,15 +63,16 @@ impl Story for Button {
 /// A simple card component with auto-registration
 #[derive(StoryDerive, Deserialize)]
 pub struct Card {
+    #[story(lorem = "3")]
     pub title: String,
+    #[story(lorem)]
     pub content: String,
-    #[story(control = "color")]
+    #[story(control = "color", default = "'#fcfcfc`'")]
     pub background: String,
 }
 
 impl Story for Card {
-    /// Convert this card into a Dom node using dominator's builder pattern
-    fn into_dom(self) -> Dom {
+    fn to_story(self) -> Dom {
         html!("div", {
             .style("background-color", &self.background)
             .style("border", "1px solid #ddd")
@@ -96,13 +99,14 @@ impl Story for Card {
 /// A simple text input component with auto-registration
 #[derive(StoryDerive, Deserialize)]
 pub struct Input {
+    #[story(lorem = "2")]
     pub placeholder: String,
+    #[story(lorem = "4")]
     pub value: String,
 }
 
 impl Story for Input {
-    /// Convert this input into a Dom node using dominator's builder pattern
-    fn into_dom(self) -> Dom {
+    fn to_story(self) -> Dom {
         html!("input" => web_sys::HtmlInputElement, {
             .attr("type", "text")
             .attr("placeholder", &self.placeholder)
@@ -117,18 +121,13 @@ impl Story for Input {
 }
 
 /// Alert severity levels
-#[derive(StorySelect, Deserialize, Clone, Debug)]
+#[derive(StorySelect, Deserialize, Clone, Debug, Default)]
 pub enum AlertType {
+    #[default]
     Info,
     Success,
     Warning,
     Error,
-}
-
-impl Default for AlertType {
-    fn default() -> Self {
-        AlertType::Info
-    }
 }
 
 impl AlertType {
@@ -145,13 +144,14 @@ impl AlertType {
 /// An alert component demonstrating enum select controls
 #[derive(StoryDerive, Deserialize)]
 pub struct Alert {
+    #[story(lorem = "5")]
     pub message: String,
     #[story(control = "select")]
     pub alert_type: AlertType,
 }
 
 impl Story for Alert {
-    fn into_dom(self) -> Dom {
+    fn to_story(self) -> Dom {
         html!("div", {
             .text(&self.message)
             .style("padding", "15px 20px")

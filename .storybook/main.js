@@ -6,15 +6,11 @@ export default {
     '../storybook/stories/**/*.stories.@(js|jsx|ts|tsx|mdx)',
     '../example/pkg/**/*.stories.@(js|jsx|ts|tsx)'
   ],
-  addons: [
-    '@storybook/addon-links',
-    '@storybook/addon-essentials',
-  ],
+
+  addons: ['@storybook/addon-links', '@storybook/addon-docs'],
+
   framework: {
     name: '@storybook/web-components-vite',
     options: {},
-  },
-  docs: {
-    autodocs: 'tag',
-  },
+  }
 };
