@@ -5,7 +5,7 @@ use std::sync::Mutex;
 use once_cell::sync::Lazy;
 
 // Re-export for use in derive macro
-pub use storybook_derive::{register_stories, Story as StoryDerive, StorySelect, register_enums};
+pub use storybook_derive::{register_stories, Story as StoryDerive, StorySelect, register_enums, set_dominator_path};
 
 /// Control type for Storybook args
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -10,9 +10,41 @@ Add to your `Cargo.toml`:
 [dependencies]
 storybook = "0.2"
 serde = { version = "1.0", features = ["derive"] }
-dominator = "0.5"
 wasm-bindgen = "0.2"
 ```
+
+By default, `storybook` uses `dominator = "0.5"`. If you want to use a different dominator version or fork, add it explicitly and disable the default feature:
+
+```toml
+[dependencies]
+storybook = { version = "0.2", default-features = false }
+dominator = "0.6"  # or any other fork/version
+serde = { version = "1.0", features = ["derive"] }
+wasm-bindgen = "0.2"
+```
+
+### Using Vendored Dominator
+
+If you've vendored dominator in your project, you can tell the `Story` derive macro where to find it using the `dominator_crate` attribute on individual types, or the `set_dominator_path` attribute on a module:
+
+**Option 1: Per-type attribute**
+```rust
+use storybook::Story;
+
+#[derive(Story)]
+#[dominator_crate = "crate::vendored::dominator"]
+pub struct MyComponent {
+    pub text: String,
+}
+```
+
+**Option 2: Module-level attribute**
+```rust
+#[storybook::set_dominator_path("crate::vendored::dominator")]
+mod components;
+```
+
+These attributes are primarily for documentation and tooling purposes - ensure your `dominator` crate is in scope with `use dominator::{Dom, html};` or similar.
 
 ## Usage
 

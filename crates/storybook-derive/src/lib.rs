@@ -2,6 +2,23 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, DeriveInput, Data, Fields};
 
+// Helper to extract dominator_crate attribute from the struct
+// Returns the crate path as a string, defaults to "dominator"
+fn get_dominator_crate_attr(input: &DeriveInput) -> String {
+    for attr in &input.attrs {
+        if attr.path().is_ident("dominator_crate") {
+            if let Ok(syn::Expr::Lit(syn::ExprLit {
+                lit: syn::Lit::Str(lit_str),
+                ..
+            })) = attr.parse_args::<syn::Expr>()
+            {
+                return lit_str.value();
+            }
+        }
+    }
+    "dominator".to_string()
+}
+
 // Helper to extract story attributes from a field
 // Returns: (control_type, default_value, from_type, lorem_word_count, skip)
 fn get_story_attrs(field: &syn::Field) -> (Option<String>, Option<String>, Option<syn::Type>, Option<usize>, bool) {
@@ -156,9 +173,30 @@ Default.args = {{
     let _ = std::fs::write(output_file, js_content);
 }
 
-#[proc_macro_derive(Story, attributes(story))]
+/// Attribute macro to document the dominator crate path being used.
+/// 
+/// This is a documentation/metadata attribute that doesn't affect generated code,
+/// but makes it clear which dominator path is being used when it's vendored or re-exported.
+/// 
+/// Usage on a module:
+/// ```ignore
+/// #[storybook::set_dominator_path("crate::vendored::dominator")]
+/// mod stories;
+/// ```
+/// 
+/// This allows specifying a custom path to the dominator crate when it's been vendored
+/// or re-exported from a different location.
+#[proc_macro_attribute]
+pub fn set_dominator_path(_args: TokenStream, input: TokenStream) -> TokenStream {
+    // This is just a marker attribute, it doesn't modify the input
+    // It's used for documentation purposes to indicate which dominator path is in use
+    input
+}
+
+#[proc_macro_derive(Story, attributes(story, dominator_crate))]
 pub fn derive_story(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
+    let _dominator_crate = get_dominator_crate_attr(&input);
     let name = &input.ident;
     let generics = &input.generics;
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
