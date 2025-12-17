@@ -2,6 +2,7 @@
 members = [
     "crates/storybook-derive",
     "crates/storybook",
+    "crates/storybook-cli",
     "example"
 ]
 resolver = "2"

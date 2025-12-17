@@ -2,9 +2,49 @@
 
 Storybook integration for Rust WebAssembly components using dominator.
 
-## Installation
+## Quick Start with CLI
 
-Add to your `Cargo.toml`:
+The easiest way to get started is with the `storybook-cli` tool:
+
+```bash
+# Install the CLI
+cargo install storybook-cli
+
+# Initialize Storybook in your project
+cd your-project
+storybook-cli init
+
+# Install dependencies and start Storybook
+npm install
+npm run storybook
+```
+
+The CLI will automatically:
+- Create `.storybook` configuration files with correct paths
+- Add required dependencies to `package.json`
+- Set up npm scripts for building and running Storybook
+- Configure Vite for WASM module loading
+- Update `.gitignore` with appropriate entries
+
+### CLI Options
+
+```bash
+storybook-cli init [OPTIONS]
+
+Options:
+  -p, --path <PATH>              Directory to initialize in (default: current directory)
+  -t, --target-dir <TARGET_DIR>  WASM output directory (default: "pkg")
+  -P, --port <PORT>              Storybook dev server port (default: 6006)
+  -s, --stories <STORIES>        Story file pattern (default: "**/*.stories.@(js|jsx|ts|tsx)")
+```
+
+### Monorepo Support
+
+The CLI works seamlessly with monorepos by automatically detecting your crate name and setting up correct relative paths. Just run `storybook-cli init` in your crate's directory.
+
+## Manual Installation
+
+If you prefer to set up manually, add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
@@ -106,8 +146,15 @@ storybook::register_stories!(Button, Alert);
 storybook::register_enums!(AlertType);
 ```
 
-5. **Build:**
+5. **Start Storybook:**
 
+If you used the CLI:
+```bash
+npm install          # Install dependencies (first time only)
+npm run storybook    # Build WASM and start Storybook
+```
+
+If you set up manually:
 ```bash
 npm run build:wasm  # Generates .stories.js files + WASM
 npm run storybook   # Start Storybook dev server
