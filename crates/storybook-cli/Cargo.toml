@@ -5,6 +5,9 @@ edition.workspace = true
 license.workspace = true
 authors.workspace = true
 description = "CLI tool for setting up storybook-rs projects"
+repository = "https://github.com/tascord/storybook-rs"
+keywords = ["storybook", "wasm", "cli", "setup", "dominator"]
+categories = ["command-line-utilities", "development-tools", "wasm"]
 
 [[bin]]
 name = "storybook-cli"

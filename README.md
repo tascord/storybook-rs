@@ -7,7 +7,7 @@ Storybook integration for Rust WebAssembly components using dominator.
 The easiest way to get started is with the `storybook-cli` tool:
 
 ```bash
-# Install the CLI
+# Install the CLI (requires Rust toolchain)
 cargo install storybook-cli
 
 # Initialize Storybook in your project
@@ -18,6 +18,11 @@ storybook-cli init
 npm install
 npm run storybook
 ```
+
+**Prerequisites:**
+- [Rust toolchain](https://rustup.rs/) (for building your WASM components)
+- [wasm-pack](https://rustwasm.github.io/wasm-pack/installer/) (for building WASM modules)
+- [Node.js](https://nodejs.org/) and npm (for Storybook)
 
 The CLI will automatically:
 - Create `.storybook` configuration files with correct paths
