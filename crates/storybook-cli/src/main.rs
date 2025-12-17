@@ -125,7 +125,7 @@ fn init_storybook(
             .and_then(|p| p.get("name"))
             .and_then(|n| n.as_str())
             .unwrap_or("example")
-            .replace("-", "_") // Rust converts hyphens to underscores in crate names
+            .replace("-", "_") // wasm-pack converts hyphens to underscores in JS module names
     } else {
         println!("⚠ Warning: Cargo.toml not found, using 'example' as crate name");
         "example".to_string()
@@ -263,7 +263,6 @@ fn update_gitignore(project_dir: &Path) -> Result<()> {
         "node_modules",
         "package-lock.json",
         "storybook-static",
-        ".storybook",
     ];
 
     let existing_content = if gitignore_path.exists() {
@@ -273,9 +272,12 @@ fn update_gitignore(project_dir: &Path) -> Result<()> {
         String::new()
     };
 
+    // Check for each entry by looking at lines to avoid false positives
+    let existing_lines: Vec<&str> = existing_content.lines().collect();
     let mut new_entries = Vec::new();
     for entry in entries_to_add {
-        if !existing_content.contains(entry) {
+        // Check if this exact entry exists as a complete line (possibly with leading/trailing whitespace)
+        if !existing_lines.iter().any(|line| line.trim() == entry) {
             new_entries.push(entry);
         }
     }
